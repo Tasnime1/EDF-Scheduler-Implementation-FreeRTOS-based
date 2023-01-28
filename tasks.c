@@ -831,7 +831,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 					#if ( configUSE_EDF_SCHEDULER == 1 )
 					/*E.C. : initialize the period */
 					pxNewTCB->xTaskPeriod = period;
-					listSET_LIST_ITEM_VALUE( &( ( pxNewTCB )->xStateListItem ), ( pxNewTCB)->xTaskPeriod + xTaskGetTickCount());
+					listSET_LIST_ITEM_VALUE( &( ( pxNewTCB )->xStateListItem ), (( pxNewTCB)->xTaskPeriod) + xTaskGetTickCount());
           #endif
             prvAddNewTaskToReadyList( pxNewTCB );
 					  
@@ -2853,7 +2853,7 @@ BaseType_t xTaskIncrementTick( void )
                     /* Place the unblocked task into the appropriate ready
                      * list. */
 										#if(configUSE_EDF_SCHEDULER==1)
-											pxTCB->xStateListItem.xItemValue = xTaskGetTickCount() + pxTCB->xTaskPeriod;
+											(pxTCB->xStateListItem.xItemValue) = (xTaskGetTickCount()) + (pxTCB->xTaskPeriod);
 										#endif
                     prvAddTaskToReadyList( pxTCB );
 

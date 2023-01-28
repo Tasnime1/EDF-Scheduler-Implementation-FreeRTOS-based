@@ -77,7 +77,7 @@ void Uart_Data(unsigned char data )
 *
 * Description : UART_0 group of data transmission function
 *               
-* Parameter   : dat
+* Parameter   : data
 ******************************************************************************************************/
 void Uart_String(char data[])
  {
@@ -102,6 +102,7 @@ void Port_Initial(void)
  *                     Starts all the other tasks, then starts the scheduler.                            *
  ********************************************************************************************************/
 int main( void )
+
 {
 	/* Setup the hardware for use with the Keil demo board. */
 	prvSetupHardware();		
@@ -151,7 +152,7 @@ int main( void )
                     "Load_1_Simulation",        /* Text name for the task. */
                     configMINIMAL_STACK_SIZE,           /* Stack size in words, not bytes. */
                     ( void * ) NULL,  /* Parameter passed into the task. */
-                    1 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
+                    6 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
                     NULL, /* Used to pass out the created task's handle. */
 										10);
 										
@@ -160,9 +161,9 @@ int main( void )
                     "Load_2_Simulation",        /* Text name for the task. */
                     configMINIMAL_STACK_SIZE,           /* Stack size in words, not bytes. */
                     ( void * ) NULL,  /* Parameter passed into the task. */
-                    1 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
+                    3 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
                     NULL, /* Used to pass out the created task's handle. */
-										100);		
+										100);	
 									
 
 	/* Now all the tasks have been started - start the scheduler.
@@ -229,7 +230,7 @@ void Button_1_Monitor (void * pvParameters)
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
-		GPIO_write(PORT_1, PIN2, PIN_IS_HIGH);
+		//GPIO_write(PORT_1, PIN2, PIN_IS_HIGH);
 		if(GPIO_read(PORT_0, PIN0) == PIN_IS_HIGH)
 		{
 			strcpy(Button1_State, "Button 1 has a rising edge on it");
@@ -244,8 +245,9 @@ void Button_1_Monitor (void * pvParameters)
 		Uart_Data('\n');
 		
 		GPIO_write(PORT_1, PIN2, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 200);
+		vTaskDelayUntil(&lastWakeTime, 100);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
+		GPIO_write(PORT_1, PIN2, PIN_IS_HIGH);
 	}
 }
 
@@ -254,7 +256,7 @@ void Button_2_Monitor (void * pvParameters)
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
-		GPIO_write(PORT_1, PIN3, PIN_IS_HIGH);
+		//GPIO_write(PORT_1, PIN3, PIN_IS_HIGH);
 		
 		if(GPIO_read(PORT_0, PIN1) == PIN_IS_HIGH)
 		{
@@ -270,8 +272,9 @@ void Button_2_Monitor (void * pvParameters)
 		Uart_Data('\n');
 		
 		GPIO_write(PORT_1, PIN3, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 200);
+		vTaskDelayUntil(&lastWakeTime, 100);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
+		GPIO_write(PORT_1, PIN3, PIN_IS_HIGH);
 	}
 }
 
@@ -280,14 +283,15 @@ void Periodic_Transmitter (void * pvParameters)
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
-		GPIO_write(PORT_1, PIN4, PIN_IS_HIGH);
+		//GPIO_write(PORT_1, PIN4, PIN_IS_HIGH);
 		
 		//Sending a random string every 100ms as stated in the project
 		Uart_String("Random String from Transmitter Task");
 		
 		GPIO_write(PORT_1, PIN4, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 200);
+		vTaskDelayUntil(&lastWakeTime, 100);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
+		GPIO_write(PORT_1, PIN4, PIN_IS_HIGH);
 	}
 }
 
@@ -296,7 +300,7 @@ void Uart_Receiver (void * pvParameters)
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
-		GPIO_write(PORT_1, PIN5, PIN_IS_HIGH);
+		//GPIO_write(PORT_1, PIN5, PIN_IS_HIGH);
 		
 		//Receive data on UART and write it to UART again	
 		if((U0LSR&0X01)==0X01) /* Checking for available data*/
@@ -306,8 +310,9 @@ void Uart_Receiver (void * pvParameters)
     }
 		
 		GPIO_write(PORT_1, PIN5, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 200);
+		vTaskDelayUntil(&lastWakeTime, 100);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
+		GPIO_write(PORT_1, PIN5, PIN_IS_HIGH);
 	}
 }
 
@@ -318,14 +323,15 @@ void Load_1_Simulation (void * pvParameters)
 		TickType_t lastWakeTime = xTaskGetTickCount();
 		int i;
 		
-		GPIO_write(PORT_1, PIN6, PIN_IS_HIGH);
+		//GPIO_write(PORT_1, PIN6, PIN_IS_HIGH);
 		for(i=0; i<37000; i++)
 		{
 			i=i;
 		}
 		GPIO_write(PORT_1, PIN6, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 200);
+		vTaskDelayUntil(&lastWakeTime, 100);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
+		GPIO_write(PORT_1, PIN6, PIN_IS_HIGH);
 	}
 }
 
@@ -336,13 +342,14 @@ void Load_2_Simulation (void * pvParameters)
 		TickType_t lastWakeTime = xTaskGetTickCount();
 		int i;
 		
-		GPIO_write(PORT_1, PIN7, PIN_IS_HIGH);
+		//GPIO_write(PORT_1, PIN7, PIN_IS_HIGH);
 		for(i=0; i<80000; i++)
 		{
 			i=i;
 		}
 		GPIO_write(PORT_1, PIN7, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 200);
+		vTaskDelayUntil(&lastWakeTime, 100);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
+		GPIO_write(PORT_1, PIN7, PIN_IS_HIGH);
 	}
 }
