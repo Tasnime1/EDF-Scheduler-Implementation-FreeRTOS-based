@@ -50,6 +50,13 @@ void Load_2_Simulation (void * pvParameters); //requirement: 12 milliseconds
 char Button1_State[50] = "";
 char Button2_State[50] = "";
 
+
+/*Total CPU Load Variables' Calculation*/
+int tasks_total_time=0, task_in_time=0, task_out_time=0;
+int system_time=0;
+float cpu_load=0;
+
+
 /*UART Initialization*/
 void Uart_Init(void)
  {
@@ -107,10 +114,7 @@ int main( void )
 	/* Setup the hardware for use with the Keil demo board. */
 	prvSetupHardware();		
 	
-	/*Initialize UART*/
-	Port_Initial();                         /* Function to initialize the ports                       */
-  Uart_Init();                            /* Initialization of Uart0                                */
-	
+
 	/*Tasks' Creation*/
 	xTaskPeriodicCreate(
                     Button_1_Monitor,         /* Function that implements the task. */
@@ -147,12 +151,13 @@ int main( void )
                     1 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
                     NULL, /* Used to pass out the created task's handle. */
 										20);
+										
 	xTaskPeriodicCreate(
                     Load_1_Simulation,         /* Function that implements the task. */
                     "Load_1_Simulation",        /* Text name for the task. */
                     configMINIMAL_STACK_SIZE,           /* Stack size in words, not bytes. */
                     ( void * ) NULL,  /* Parameter passed into the task. */
-                    6 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
+                    1 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
                     NULL, /* Used to pass out the created task's handle. */
 										10);
 										
@@ -161,9 +166,10 @@ int main( void )
                     "Load_2_Simulation",        /* Text name for the task. */
                     configMINIMAL_STACK_SIZE,           /* Stack size in words, not bytes. */
                     ( void * ) NULL,  /* Parameter passed into the task. */
-                    3 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
+                    1 | portPRIVILEGE_BIT,						 /* Priority at which the task is created. */
                     NULL, /* Used to pass out the created task's handle. */
 										100);	
+
 									
 
 	/* Now all the tasks have been started - start the scheduler.
@@ -212,21 +218,26 @@ static void prvSetupHardware( void )
 {
 	/* Perform the hardware setup required.  This is minimal as most of the
 	setup is managed by the settings in the project file. */
-
+	
 	/* Configure the UART1 pins.  All other pins remain at their default of 0. */
 	PINSEL0 |= mainTX_ENABLE;
 	PINSEL0 |= mainRX_ENABLE;
-
-	/* LED pins need to be output. */
-	IODIR1 = mainLED_TO_OUTPUT;
-
+	
+	/*Initialize UART*/
+	Port_Initial();                         /* Function to initialize the ports                       */
+	Uart_Init();                            /* Initialization of Uart0                                */
+	
 	/* Setup the peripheral bus to be the same as the PLL output. */
 	VPBDIV = mainBUS_CLK_FULL;
+	
+	configTimer1();
+	GPIO_init();
 }
 /*-----------------------------------------------------------*/
 
 void Button_1_Monitor (void * pvParameters)
 {
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 1 );
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
@@ -245,7 +256,7 @@ void Button_1_Monitor (void * pvParameters)
 		Uart_Data('\n');
 		
 		GPIO_write(PORT_1, PIN2, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 100);
+		vTaskDelayUntil(&lastWakeTime,100);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
 		GPIO_write(PORT_1, PIN2, PIN_IS_HIGH);
 	}
@@ -253,6 +264,7 @@ void Button_1_Monitor (void * pvParameters)
 
 void Button_2_Monitor (void * pvParameters)
 {
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 2 );
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
@@ -280,6 +292,7 @@ void Button_2_Monitor (void * pvParameters)
 
 void Periodic_Transmitter (void * pvParameters)
 {
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 3 );
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
@@ -297,6 +310,7 @@ void Periodic_Transmitter (void * pvParameters)
 
 void Uart_Receiver (void * pvParameters)
 {
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 4 );
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
@@ -318,6 +332,7 @@ void Uart_Receiver (void * pvParameters)
 
 void Load_1_Simulation (void * pvParameters)
 {
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 5 );
 	for(;;)
 	{	
 		TickType_t lastWakeTime = xTaskGetTickCount();
@@ -337,6 +352,7 @@ void Load_1_Simulation (void * pvParameters)
 
 void Load_2_Simulation (void * pvParameters)
 {
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 6 );
 	for(;;)
 	{	
 		TickType_t lastWakeTime = xTaskGetTickCount();

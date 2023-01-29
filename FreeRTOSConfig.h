@@ -28,6 +28,7 @@
 #define FREERTOS_CONFIG_H
 
 #include <lpc21xx.h>
+#include "GPIO.h"
 
 /*-----------------------------------------------------------
  * Application specific definitions.
@@ -54,12 +55,37 @@
 #define configUSE_16_BIT_TICKS		0
 #define configIDLE_SHOULD_YIELD		1
 #define configUSE_EDF_SCHEDULER   1
+#define configUSE_APPLICATION_TASK_TAG   1
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
 #define configUSE_TIME_SLICING           0
 
 #define configQUEUE_REGISTRY_SIZE 	0
 
-#define IdleTaskPeriod              300
+#define IdleTaskPeriod              105
+
+/*Trace Hooks*/
+extern int tasks_total_time, task_in_time, task_out_time;
+extern int system_time;
+extern float cpu_load;
+
+#define traceTASK_SWITCHED_OUT()   do\
+																	{\
+																	if( ((int)(pxCurrentTCB->pxTaskTag)) != 0 )\
+																	{\
+																		task_out_time = T1TC;\
+																		tasks_total_time += (task_out_time - task_in_time);\
+																	}\
+																	system_time = T1TC;\
+																	cpu_load = (tasks_total_time/ (float)system_time)*100;\
+																	}while(0)
+#define traceTASK_SWITCHED_IN()	do\
+																	{\
+																	if( ((int)(pxCurrentTCB->pxTaskTag)) != 0 )\
+																	{\
+																		task_in_time = T1TC;\
+																	}\
+																	}while(0)
+
 
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */

@@ -2854,6 +2854,7 @@ BaseType_t xTaskIncrementTick( void )
                      * list. */
 										#if(configUSE_EDF_SCHEDULER==1)
 											(pxTCB->xStateListItem.xItemValue) = (xTaskGetTickCount()) + (pxTCB->xTaskPeriod);
+											(xIdleTaskHandle->xStateListItem.xItemValue) = (xTaskGetTickCount()) + (xIdleTaskHandle->xTaskPeriod);
 										#endif
                     prvAddTaskToReadyList( pxTCB );
 
@@ -3503,7 +3504,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
     for( ; ; )
     {
 				#if(configUSE_EDF_SCHEDULER == 1)
-					listSET_LIST_ITEM_VALUE(&(pxCurrentTCB->xStateListItem), xTaskGetTickCount() + (pxCurrentTCB->xTaskPeriod));
+					listSET_LIST_ITEM_VALUE(&(xIdleTaskHandle->xStateListItem), xTaskGetTickCount() + (xIdleTaskHandle->xTaskPeriod));
 				#endif
         /* See if any tasks have deleted themselves - if so then the idle task
          * is responsible for freeing the deleted task's TCB and stack. */
