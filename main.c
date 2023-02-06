@@ -27,6 +27,9 @@
 #define mainBUS_CLK_FULL	( ( unsigned char ) 0x01 )
 #define mainLED_TO_OUTPUT	( ( unsigned long ) 0xff0000 )
 
+/*UART*/
+#define mainCOM_TEST_BAUD_RATE	( ( unsigned long ) 115200 )
+xComPortHandle xPort;;
 
 /*-----------------------------------------------------------*/
 
@@ -46,9 +49,6 @@ void Uart_Receiver (void * pvParameters); //0.85 microSec
 void Load_1_Simulation (void * pvParameters); //requirement: 5 milliseconds
 void Load_2_Simulation (void * pvParameters); //requirement: 12 milliseconds
 
-/* Buttons' State */
-char Button1_State[50] = "";
-char Button2_State[50] = "";
 
 
 /*Total CPU Load Variables' Calculation*/
@@ -56,52 +56,6 @@ int tasks_total_time=0, task_in_time=0, task_out_time=0;
 int system_time=0;
 float cpu_load=0;
 
-
-/*UART Initialization*/
-void Uart_Init(void)
- {
-   U0LCR=0X83;                           /* line control registor                                     */
-   U0DLL=0XC3;                           /* baud rate registor                                        */
-   U0DLM=0X00;                           /* baud rate registor                                        */
-   U0LCR=0X03;                           /* line control registor                                     */
- } 
- 
-/******************************************************************************************************
-* Function    : Uart_Data
-*
-* Description : UART_0 data transmission function
-*               
-* Parameter   : data
-******************************************************************************************************/
-void Uart_Data(unsigned char data )
- {
-   U0THR = data;
-   while((U0LSR & 0X20)!= 0X20);
- }
- 
-/******************************************************************************************************
-* Function    : Uart_String
-*
-* Description : UART_0 group of data transmission function
-*               
-* Parameter   : data
-******************************************************************************************************/
-void Uart_String(char data[])
- {
-    while(*data!='\0') 
-    {
-         Uart_Data(*data);
-         data++;
-    }
- }
- 
-/*******************************************************************************************************
-*                                PORT INITIALIZATION FUNCTION                                          *
-*******************************************************************************************************/
-void Port_Initial(void)    
- {
-    PINSEL0  =  0x00000005;
- } 
 
 
 /*********************************************************************************************************
@@ -115,6 +69,7 @@ int main( void )
 	prvSetupHardware();		
 	
 
+	/*Tasks' Creation*/
 	/*Tasks' Creation*/
 	xTaskPeriodicCreate(
                     Button_1_Monitor,         /* Function that implements the task. */
@@ -170,7 +125,6 @@ int main( void )
                     NULL, /* Used to pass out the created task's handle. */
 										100);	
 
-									
 
 	/* Now all the tasks have been started - start the scheduler.
 	
@@ -219,14 +173,7 @@ static void prvSetupHardware( void )
 	/* Perform the hardware setup required.  This is minimal as most of the
 	setup is managed by the settings in the project file. */
 	
-	/* Configure the UART1 pins.  All other pins remain at their default of 0. */
-	PINSEL0 |= mainTX_ENABLE;
-	PINSEL0 |= mainRX_ENABLE;
-	
-	/*Initialize UART*/
-	Port_Initial();                         /* Function to initialize the ports                       */
-	Uart_Init();                            /* Initialization of Uart0                                */
-	
+	xPort = xSerialPortInitMinimal(mainCOM_TEST_BAUD_RATE, 30);
 	/* Setup the peripheral bus to be the same as the PLL output. */
 	VPBDIV = mainBUS_CLK_FULL;
 	
@@ -241,22 +188,18 @@ void Button_1_Monitor (void * pvParameters)
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
-		//GPIO_write(PORT_1, PIN2, PIN_IS_HIGH);
+		
 		if(GPIO_read(PORT_0, PIN0) == PIN_IS_HIGH)
 		{
-			strcpy(Button1_State, "Button 1 has a rising edge on it");
+			vSerialPutString(xPort , (signed char*)"Button 1 has a falling edge on it\n", 35);
 		}
 		else
 		{
-			strcpy(Button1_State, "Button 1 has a falling edge on it");
+			vSerialPutString(xPort, (signed char*)"Button 1 has a rising edge on it\n", 34);
 		}
-		Uart_String(Button1_State);
-		Uart_Data('\n');
-		Uart_String(Button2_State);
-		Uart_Data('\n');
 		
 		GPIO_write(PORT_1, PIN2, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime,100);
+		vTaskDelayUntil(&lastWakeTime, 50);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
 		GPIO_write(PORT_1, PIN2, PIN_IS_HIGH);
 	}
@@ -270,21 +213,17 @@ void Button_2_Monitor (void * pvParameters)
 		TickType_t lastWakeTime = xTaskGetTickCount();
 		//GPIO_write(PORT_1, PIN3, PIN_IS_HIGH);
 		
-		if(GPIO_read(PORT_0, PIN1) == PIN_IS_HIGH)
+		if(GPIO_read(PORT_0, PIN0) == PIN_IS_HIGH)
 		{
-			strcpy(Button2_State, "Button 2 has a rising edge on it");
+			vSerialPutString(xPort , (signed char*)"Button 2 has a falling edge on it\n", 35);
 		}
 		else
 		{
-			strcpy(Button2_State, "Button 2 has a falling edge on it");
+			vSerialPutString(xPort, (signed char*)"Button 2 has a rising edge on it\n", 34);
 		}
-		Uart_String(Button1_State);
-		Uart_Data('\n');
-		Uart_String(Button2_State);
-		Uart_Data('\n');
 		
 		GPIO_write(PORT_1, PIN3, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 100);
+		vTaskDelayUntil(&lastWakeTime, 50);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
 		GPIO_write(PORT_1, PIN3, PIN_IS_HIGH);
 	}
@@ -296,10 +235,9 @@ void Periodic_Transmitter (void * pvParameters)
 	for(;;)
 	{
 		TickType_t lastWakeTime = xTaskGetTickCount();
-		//GPIO_write(PORT_1, PIN4, PIN_IS_HIGH);
 		
 		//Sending a random string every 100ms as stated in the project
-		Uart_String("Random String from Transmitter Task");
+		vSerialPutString(NULL, "Random String from Transmitter Task", 36);
 		
 		GPIO_write(PORT_1, PIN4, PIN_IS_LOW);
 		vTaskDelayUntil(&lastWakeTime, 100);
@@ -324,7 +262,7 @@ void Uart_Receiver (void * pvParameters)
     }
 		
 		GPIO_write(PORT_1, PIN5, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 100);
+		vTaskDelayUntil(&lastWakeTime, 20);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
 		GPIO_write(PORT_1, PIN5, PIN_IS_HIGH);
 	}
@@ -344,7 +282,7 @@ void Load_1_Simulation (void * pvParameters)
 			i=i;
 		}
 		GPIO_write(PORT_1, PIN6, PIN_IS_LOW);
-		vTaskDelayUntil(&lastWakeTime, 100);
+		vTaskDelayUntil(&lastWakeTime, 10);
 		GPIO_write(PORT_1, PIN1, PIN_IS_LOW);
 		GPIO_write(PORT_1, PIN6, PIN_IS_HIGH);
 	}
